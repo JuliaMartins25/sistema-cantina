@@ -1,63 +1,61 @@
--- 🗃️ Criar banco
-CREATE DATABASE cantina_db;
+CREATE DATABASE cantina
 
--- Conectar ao banco
-\c cantina_db;
 
--- 🧑 Usuários
-CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
-  username TEXT NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
-  role TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT now()
+-- Tabela de funcionarios
+CREATE TABLE funcionarios (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    senha VARCHAR(50) NOT NULL
 );
 
--- 🍞 Produtos
-CREATE TABLE IF NOT EXISTS products (
-  id SERIAL PRIMARY KEY,
-  sku TEXT UNIQUE,
-  name TEXT NOT NULL,
-  brand TEXT,
-  model TEXT,
-  description TEXT,
-  unit TEXT,
-  qty INTEGER DEFAULT 0,
-  min_stock INTEGER DEFAULT 0,
-  created_at TIMESTAMP DEFAULT now()
+-- Tabela de produtos
+CREATE TABLE produtos (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    preco DECIMAL(10,2) NOT NULL,
+    estoque INTEGER DEFAULT 0
+    tipo  VARCHAR(20)
 );
 
--- 📋 Movimentações de estoque
-CREATE TABLE IF NOT EXISTS stock_movements (
-  id SERIAL PRIMARY KEY,
-  product_id INTEGER NOT NULL REFERENCES products(id),
-  user_id INTEGER NOT NULL REFERENCES users(id),
-  type TEXT NOT NULL CHECK (type IN ('entrada','saida')),
-  quantity INTEGER NOT NULL CHECK (quantity > 0),
-  movement_date DATE NOT NULL,
-  balance_after INTEGER NOT NULL,
-  note TEXT,
-  created_at TIMESTAMP DEFAULT now()
+-- Tabela de vendas
+CREATE TABLE vendas (
+    id SERIAL PRIMARY KEY,
+    funcionario_id INTEGER REFERENCES funcionarios(id),
+    produto_id INTEGER REFERENCES produtos(id),
+    quantidade INTEGER NOT NULL,
+    data_venda TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 👩‍💼 Inserir usuários
-INSERT INTO users (name, username, password_hash, role) VALUES
-('Admin Teste', 'admin', 'admin123', 'admin'),
-('João da Silva', 'joao.s', 'joao123', 'almoxarife'),
-('Maria Souza', 'maria.s', 'maria123', 'almoxarife');
 
--- 🧰 Inserir produtos
-INSERT INTO products (sku, name, brand, model, description, unit, qty, min_stock)
-VALUES
-('REF-COL-350', 'Refrigerante Coca-Cola 350ml', 'Coca-Cola', 'Lata 350ml', 'Bebida gaseificada sabor cola.', 'unidade', 30, 10),
-('SALG-QUEI-UN', 'Salgado de Queijo', 'Forno & Sabor', 'Mini Queijo', 'Salgado assado recheado com queijo mussarela.', 'unidade', 50, 10),
-('BIS-CHO-90', 'Biscoito Recheado de Chocolate 90g', 'Nestlé', 'Negresco', 'Biscoito crocante com recheio sabor chocolate.', 'unidade', 40, 8);
+INSERT INTO funcionarios (nome, email, senha) VALUES 
+('Ademir', 'adimin@pizzaria.com.br', 'admin123'),
+('Seu Ze', 'funcionario1@pizzaria.com.br', '123456'),
+
+INSERT INTO produtos (nome, preco, estoque, tipo) VALUES
+('Salgado de Frango', 10.50, 0, Salgado Assado),
+('Coca Cola', 12.50, 0, Coca Cola 220ml),
+('Bolo de Chocolate', 15.50, 0, Bolo de Pote de Chocolate),
+
+INSERT INTO VENDAS (funcionario_id, produto_id, quantidade) VALUES
+(1, 1, 1),
+(1, 2, 1),
+
+UPDATE produtos
+SET estoque = estoque - (
+    SELECT SUM(quantidade)
+    FROM vendas
+    WHERE vendas.produto_id = produtos.id,
+)
 
 
--- 🧾 Movimentações iniciais
-INSERT INTO stock_movements (product_id, user_id, type, quantity, movement_date, balance_after, note)
-VALUES
-(1,1,'entrada',5, CURRENT_DATE - INTERVAL '10 days', 15, 'Reforço de estoque'),
-(2,2,'saida',1, CURRENT_DATE - INTERVAL '5 days', 4, 'Uso interno'),
-(3,1,'entrada',3, CURRENT_DATE - INTERVAL '2 days', 11, 'Compra fornecedor');
+
+
+
+
+
+
+
+-- Relacionamentos
+-- 1 usuário ----> N vendas
+-- 1 pizza  ----> N vendas
